@@ -1,40 +1,54 @@
 using System.Text;
+using DataTypesConsoleApp.Utils;
 
 namespace DataTypesConsoleApp.Services;
 
 public class InsertMethodGenerator
 {
-    private readonly SqlDatabaseService _dbService;
+    private readonly DatabaseService _dbService;
 
-    public InsertMethodGenerator(SqlDatabaseService dbService)
+    public InsertMethodGenerator(DatabaseService dbService)
     {
         _dbService = dbService;
     }
-
-    public string GenerateInsertMethod(string procedureName)
+    public async Task<string> GenerateInsertMethodAsync(string procedureName)
     {
-        var parameters = _dbService.GetProcedureParameters(procedureName);
+        var parameters = await _dbService.GetProcedureParametersAsync(procedureName);
         var sb = new StringBuilder();
 
         sb.AppendLine("public void InsertData(");
         sb.AppendLine(string.Join(",\n", parameters.Select(p =>
-            $"    object {p.Name} // TODO: Map system_type_id to C# type"
+            p.IsOutput
+                ? $"    out {SqlTypeMapper.MapSqlToCSharp(p.SqlType, p.IsNullable)} {p.Name}"
+                : $"    {SqlTypeMapper.MapSqlToCSharp(p.SqlType, p.IsNullable)} {p.Name}"
         )));
         sb.AppendLine(")");
         sb.AppendLine("{");
-        sb.AppendLine("    using var conn = new SqlConnection(_connectionString);");
-        sb.AppendLine("    conn.Open();");
-        sb.AppendLine($"    using var cmd = new SqlCommand(\"{procedureName}\", conn);");
-        sb.AppendLine("    cmd.CommandType = CommandType.StoredProcedure;");
-        sb.AppendLine();
+        sb.AppendLine("    using var context = new MyDbContext(...);");
+        sb.AppendLine("    var sqlParams = new List<SqlParameter>();");
 
         foreach (var p in parameters)
         {
-            sb.AppendLine($"    cmd.Parameters.Add(new SqlParameter(\"@{p.Name}\", {p.Name}));");
+            string sqlDbType = $"SqlDbType.{SqlTypeMapper.MapSqlToSqlDbType(p.SqlType)}";
+            string dir = p.IsOutput ? "ParameterDirection.Output" : "ParameterDirection.Input";
+            string value = p.IsOutput ? "DBNull.Value" : p.Name;
+            sb.AppendLine($@"    var param_{p.Name} = new SqlParameter(""@{p.Name}"", {value})");
+            sb.AppendLine("    {");
+            sb.AppendLine($"        SqlDbType = {sqlDbType},");
+            sb.AppendLine($"        Direction = {dir}");
+            sb.AppendLine("    };");
+            sb.AppendLine($"    sqlParams.Add(param_{p.Name});");
         }
 
         sb.AppendLine();
-        sb.AppendLine("    cmd.ExecuteNonQuery();");
+        sb.AppendLine($@"    context.Database.ExecuteSqlRaw(""EXEC {procedureName} {string.Join(", ", parameters.Select(p => "@" + p.Name + (p.IsOutput ? " OUTPUT" : "")))}"", sqlParams.ToArray());");
+
+        // Для output-параметров — возврат значения после ExecuteSqlRaw
+        foreach (var p in parameters.Where(x => x.IsOutput))
+        {
+            sb.AppendLine($"    {p.Name} = ({SqlTypeMapper.MapSqlToCSharp(p.SqlType, p.IsNullable)})param_{p.Name}.Value;");
+        }
+
         sb.AppendLine("}");
 
         return sb.ToString();

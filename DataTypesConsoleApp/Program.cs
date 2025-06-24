@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using DataTypesConsoleApp.Services;
-using Microsoft.Data.SqlClient;
+﻿using Belbank.CodeGenLib.Services;
 
 class Program
 {

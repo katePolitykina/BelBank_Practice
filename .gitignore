@@ -1,6 +1,78 @@
+# Visual Studio временные файлы и каталоги
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build каталоги
 bin/
 obj/
+
+# Папки пакетов
 /packages/
+
+# Rider
+*.sln.iml
+*.idea/
 riderModule.iml
-/_ReSharper.Caches/
-.vs/
+
+# ReSharper
+_ReSharper.Caches/
+
+# Логи и временные файлы
+*.log
+*.tmp
+*.temp
+
+# NuGet пакеты
+*.nupkg
+*.snupkg
+.nuget/
+
+# Файлы сборки и публикации
+*.dll
+*.exe
+*.pdb
+*.cache
+*.ilk
+*.idb
+*.mdb
+
+# Файлы локальных настроек
+*.local
+*.userprefs
+
+# Папки публикации и развертывания
+publish/
+publish_output/
+
+# Visual Studio Code
+.vscode/
+
+# Конфигурационные файлы JetBrains Rider
+.idea/
+
+# Windows thumbnail cache files
+Thumbs.db
+ehthumbs.db
+
+# Файлы индексации и базы данных
+*.dbmdl
+*.bak
+
+# Папки временных файлов тестов
+TestResults/
+
+# Файлы Azure DevOps
+*.vspscc
+*.vssscc
+
+# Файлы пакетов Unity (если есть)
+*.unitypackage
+
+# Прочие временные и системные файлы
+.DS_Store
+*.swp
+*~
+
